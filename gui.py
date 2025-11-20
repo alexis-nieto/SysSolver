@@ -10,7 +10,7 @@ class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Solucionador de Sistemas de Ecuaciones")
-        self.setGeometry(100, 100, 900, 500)
+        self.setGeometry(100, 100, 950, 550)
 
         # --- Main widget ---
         main_widget = QWidget()
@@ -19,11 +19,11 @@ class GUI(QMainWindow):
         main_grid.setContentsMargins(10, 10, 10, 10)
         main_grid.setSpacing(10)
 
-        # --- SECCION 1: Entrada de datos ---
+        # --- SECCION 1: Entrada ---
         self.section1 = QWidget()
         section1_layout = QVBoxLayout(self.section1)
 
-        # Header input
+        # Inputs
         input_layout = QHBoxLayout()
         self.rows_input = QSpinBox()
         self.rows_input.setRange(2, 100);
@@ -32,21 +32,21 @@ class GUI(QMainWindow):
         self.cols_input.setRange(3, 100);
         self.cols_input.setValue(4)
 
-        input_layout.addWidget(QLabel("Ecuaciones:"))
+        input_layout.addWidget(QLabel("Ecuaciones (Filas):"))
         input_layout.addWidget(self.rows_input)
-        input_layout.addWidget(QLabel("Columnas:"))
+        input_layout.addWidget(QLabel("Variables + 1 (Columnas):"))
         input_layout.addWidget(self.cols_input)
         input_layout.addStretch()
         section1_layout.addLayout(input_layout)
 
-        # Matrix Input Area
+        # Area Matriz Input
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         section1_layout.addWidget(self.scroll_area)
         self.matrix_widget = QWidget()
         self.scroll_area.setWidget(self.matrix_widget)
 
-        # --- SECCION 2: Resultado Matriz ---
+        # --- SECCION 2: Resultados ---
         self.section2 = QWidget()
         section2_layout = QVBoxLayout(self.section2)
         section2_layout.addWidget(QLabel("<b>Matriz Final:</b>"))
@@ -57,11 +57,10 @@ class GUI(QMainWindow):
         self.section2_matrix_widget = QWidget()
         self.section2_scroll.setWidget(self.section2_matrix_widget)
 
-        # --- SECCION 3: Controles y Procedimiento ---
+        # --- SECCION 3: Procedimiento ---
         self.section3 = QWidget()
         section3_layout = QHBoxLayout(self.section3)
 
-        # Controles
         controls_layout = QVBoxLayout()
         self.method_combo = QComboBox()
         self.method_combo.addItems(["Gauss", "Gauss-Jordan", "Cramer", "Matriz Inversa"])
@@ -74,7 +73,6 @@ class GUI(QMainWindow):
         controls_layout.addWidget(self.calc_button)
         controls_layout.addStretch()
 
-        # Text Area
         self.procedure_area = QTextEdit()
         self.procedure_area.setReadOnly(True)
         self.procedure_area.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
@@ -82,7 +80,7 @@ class GUI(QMainWindow):
         section3_layout.addLayout(controls_layout, 1)
         section3_layout.addWidget(self.procedure_area, 4)
 
-        # Layout Principal
+        # Grid layout
         main_grid.addWidget(self.section1, 0, 0)
         main_grid.addWidget(self.section2, 0, 1)
         main_grid.addWidget(self.section3, 1, 0, 1, 2)
@@ -92,17 +90,19 @@ class GUI(QMainWindow):
         main_grid.setRowStretch(0, 6)
         main_grid.setRowStretch(1, 4)
 
-        # Inicialización
+        # Init
         self.create_matrix()
         self.clear_result_matrix()
 
         self.rows_input.valueChanged.connect(self.create_matrix)
         self.cols_input.valueChanged.connect(self.create_matrix)
 
+    # --- CAMBIO PRINCIPAL EN GUI AQUÍ ---
     def get_var_name(self, index):
-        """Genera x, y, z, a, b... consistente con methods.py"""
-        if index < 3: return chr(120 + index)
-        return chr(97 + index - 3)
+        """Devuelve x1, x2, x3..."""
+        return f"x{index + 1}"
+
+    # ------------------------------------
 
     def create_matrix(self):
         rows = self.rows_input.value()
@@ -114,6 +114,7 @@ class GUI(QMainWindow):
 
         # Headers
         for j in range(cols - 1):
+            # Usamos get_var_name para el header
             layout.addWidget(QLabel(self.get_var_name(j), alignment=Qt.AlignmentFlag.AlignCenter), 0, j)
         layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
@@ -144,7 +145,7 @@ class GUI(QMainWindow):
         rows = len(result_matrix)
         cols = len(result_matrix[0])
 
-        # Headers
+        # Headers Resultado (Consistente con Input)
         for j in range(cols - 1):
             lbl = QLabel(self.get_var_name(j))
             lbl.setStyleSheet("font-weight: bold")
@@ -160,7 +161,6 @@ class GUI(QMainWindow):
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 lbl.setFrameShape(QFrame.Shape.Box)
 
-                # Resaltar resultado
                 color = "#d4f0f0" if j == cols - 1 else "white"
                 lbl.setStyleSheet(f"background-color: {color}; border: 1px solid #aaa;")
                 layout.addWidget(lbl, i + 1, j)

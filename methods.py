@@ -10,15 +10,14 @@ class SystemSolver:
         self.n_equations = self.original_matrix.shape[0]
         self.n_variables = self.original_matrix.shape[1] - 1
 
+    # --- CAMBIO PRINCIPAL AQUÍ ---
     def _get_variable_name(self, index: int) -> str:
-        """Genera nombres de variables consistentes con la GUI (x, y, z, a, b...)"""
-        if index < 3:
-            return chr(120 + index)  # x, y, z
-        else:
-            return chr(97 + index - 3)  # a, b, c...
+        """Genera notación x1, x2, x3... infinita."""
+        return f"x{index + 1}"
+
+    # -----------------------------
 
     def _get_solution_text(self, solution: List[float]) -> str:
-        """Genera el string final con los resultados."""
         text = "\n=== SOLUCIÓN ===\n"
         for i, val in enumerate(solution):
             var_name = self._get_variable_name(i)
@@ -26,9 +25,7 @@ class SystemSolver:
         return text
 
     def _create_identity_result_matrix(self, solution: List[float]) -> List[List[float]]:
-        """Crea una matriz visual para métodos que no resultan en una matriz final triangular (Cramer/Inversa)."""
-        if not solution:
-            return []
+        if not solution: return []
         final_mat = np.eye(self.n_equations)
         sol_col = np.zeros(self.n_equations)
         for i in range(min(len(solution), self.n_equations)):
@@ -36,7 +33,6 @@ class SystemSolver:
         return np.column_stack((final_mat, sol_col)).tolist()
 
     def _matrix_to_string(self, matrix) -> str:
-        """Convierte matriz a texto para el log."""
         result = ""
         for row in matrix:
             result += "[ " + " ".join([f"{val:8.4f}" for val in row]) + " ]\n"
@@ -47,9 +43,7 @@ class SystemSolver:
         procedure = "=== MÉTODO DE GAUSS ===\n\n"
         procedure += "Matriz inicial:\n" + self._matrix_to_string(matrix) + "\n\n"
 
-        # Eliminación hacia adelante
         for k in range(self.n_equations - 1):
-            # Pivoteo
             max_row = k
             for i in range(k + 1, self.n_equations):
                 if abs(matrix[i][k]) > abs(matrix[max_row][k]):
@@ -69,7 +63,6 @@ class SystemSolver:
                     procedure += f"F{i + 1} = F{i + 1} - ({factor:.4f}) * F{k + 1}\n"
                     procedure += self._matrix_to_string(matrix) + "\n"
 
-        # Sustitución hacia atrás
         solution = np.zeros(self.n_variables)
         for i in range(self.n_equations - 1, -1, -1):
             if abs(matrix[i][i]) < 1e-10:
@@ -80,9 +73,7 @@ class SystemSolver:
                 sum_val -= matrix[i][j] * solution[j]
             solution[i] = sum_val / matrix[i][i]
 
-        # AQUÍ AGREGAMOS EL TEXTO DE LA SOLUCIÓN
         procedure += self._get_solution_text(solution.tolist())
-
         return solution.tolist(), procedure, matrix.tolist()
 
     def gauss_jordan(self) -> Tuple[List[float], str, List[List[float]]]:
@@ -91,7 +82,6 @@ class SystemSolver:
         procedure += "Matriz inicial:\n" + self._matrix_to_string(matrix) + "\n\n"
 
         for k in range(self.n_equations):
-            # Pivoteo
             max_row = k
             for i in range(k + 1, self.n_equations):
                 if abs(matrix[i][k]) > abs(matrix[max_row][k]):
@@ -104,13 +94,11 @@ class SystemSolver:
             if abs(matrix[k][k]) < 1e-10:
                 return [], procedure + "Error: Pivote cero.\n", []
 
-            # Normalizar pivote a 1
             pivot = matrix[k][k]
             if pivot != 1:
                 matrix[k] = matrix[k] / pivot
                 procedure += f"F{k + 1} = F{k + 1} / {pivot:.4f}\n"
 
-            # Hacer ceros arriba y abajo
             for i in range(self.n_equations):
                 if i != k and matrix[i][k] != 0:
                     factor = matrix[i][k]
@@ -119,10 +107,7 @@ class SystemSolver:
             procedure += self._matrix_to_string(matrix) + "\n"
 
         solution = matrix[:, -1]
-
-        # AQUÍ AGREGAMOS EL TEXTO DE LA SOLUCIÓN
         procedure += self._get_solution_text(solution.tolist())
-
         return solution.tolist(), procedure, matrix.tolist()
 
     def cramer(self) -> Tuple[List[float], str, List[List[float]]]:
@@ -152,9 +137,7 @@ class SystemSolver:
             procedure += f"Para {var_name}, det(A_{i + 1}) = {det_A_i:.4f}\n"
             procedure += f"{var_name} = {det_A_i:.4f} / {det_A:.4f} = {val:.6f}\n\n"
 
-        # AQUÍ AGREGAMOS EL TEXTO DE LA SOLUCIÓN
         procedure += self._get_solution_text(solution)
-
         final_matrix = self._create_identity_result_matrix(solution)
         return solution, procedure, final_matrix
 
@@ -173,16 +156,14 @@ class SystemSolver:
             return [], procedure + "Error: Matriz singular.\n", []
 
         solution = np.dot(A_inv, b)
-
         procedure += "Solución x = A⁻¹ * b:\n"
-        # AQUÍ AGREGAMOS EL TEXTO DE LA SOLUCIÓN
         procedure += self._get_solution_text(solution.tolist())
 
         final_matrix = self._create_identity_result_matrix(solution.tolist())
         return solution.tolist(), procedure, final_matrix
 
 
-def solve_system(matrix: List[List[float]], method: str) -> Tuple[List[float], str, List[List[float]]]:
+def solve_system(matrix, method):
     solver = SystemSolver(matrix)
     if method == "Gauss":
         return solver.gauss()

@@ -1,8 +1,9 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QLineEdit, QPushButton,
                              QScrollArea, QGridLayout, QSpinBox, QTextEdit,
-                             QFrame, QComboBox)
+                             QFrame, QComboBox, QMessageBox)
 from PyQt6.QtCore import Qt
+from methods import solve_system
 
 
 class GUI(QMainWindow):
@@ -263,9 +264,49 @@ class GUI(QMainWindow):
         # keep scrollbar at bottom
         self.procedure_area.verticalScrollBar().setValue(self.procedure_area.verticalScrollBar().maximum())
 
+    def get_matrix_values(self):
+        """Obtiene los valores actuales de la matriz como lista de listas de floats."""
+        matrix = []
+        try:
+            for i in range(len(self.cells)):
+                row = []
+                for j in range(len(self.cells[i])):
+                    value = self.cells[i][j].text().strip()
+                    if not value:
+                        value = "0"
+                    row.append(float(value))
+                matrix.append(row)
+            return matrix
+        except ValueError as e:
+            QMessageBox.warning(self, "Error de entrada",
+                                "Por favor, ingrese solo números válidos en la matriz.")
+            return None
+
     def on_calculate(self):
-        """Triggered by the Calcular button. Replace stub with actual algorithm."""
+        """Triggered by the Calcular button."""
         method = self.method_combo.currentText()
-        # Example behavior: append a line stating the chosen method.
-        self.append_procedure(f"Calculating using {method}...\n")
-        # TODO: run chosen method on current matrix and append steps/results to procedure_area.
+
+        # Limpiar procedimiento anterior
+        self.set_procedure("")
+
+        # Obtener valores de la matriz
+        matrix = self.get_matrix_values()
+        if matrix is None:
+            return
+
+        # Resolver el sistema
+        try:
+            solution, procedure = solve_system(matrix, method)
+
+            # Mostrar procedimiento
+            self.set_procedure(procedure)
+
+            # Si hay solución, actualizar la matriz resultante (opcional)
+            if solution:
+                # Aquí podrías mostrar la solución en la matriz resultante si lo deseas
+                pass
+
+        except Exception as e:
+            error_msg = f"Error al resolver el sistema:\n{str(e)}"
+            self.set_procedure(error_msg)
+            QMessageBox.critical(self, "Error", error_msg)

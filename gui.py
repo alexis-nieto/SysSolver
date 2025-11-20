@@ -10,303 +10,188 @@ class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Solucionador de Sistemas de Ecuaciones")
-        self.setGeometry(100, 100, 700, 350)
+        self.setGeometry(100, 100, 900, 500)
 
         # --- Main widget ---
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         main_grid = QGridLayout(main_widget)
-        main_grid.setContentsMargins(8, 8, 8, 8)
-        main_grid.setSpacing(8)
+        main_grid.setContentsMargins(10, 10, 10, 10)
+        main_grid.setSpacing(10)
 
-        # ---  top-left, section 1, data entry area ---
+        # --- SECCION 1: Entrada de datos ---
         self.section1 = QWidget()
         section1_layout = QVBoxLayout(self.section1)
-        section1_layout.setContentsMargins(0, 0, 0, 0)
-        section1_layout.setSpacing(6)
 
-        # Input section (placed inside section1)
+        # Header input
         input_layout = QHBoxLayout()
-
-        # Rows input
-        rows_label = QLabel("Ecuaciones (n):")
         self.rows_input = QSpinBox()
-        self.rows_input.setMinimum(2)
-        self.rows_input.setMaximum(100)
-        self.rows_input.setValue(3)  # default to 3 equations
-
-        # Columns input
-        cols_label = QLabel("Columnas (m):")
+        self.rows_input.setRange(2, 100);
+        self.rows_input.setValue(3)
         self.cols_input = QSpinBox()
-        self.cols_input.setMinimum(3)
-        self.cols_input.setMaximum(100)
-        self.cols_input.setValue(4)  # default to 4 (3 variables + 1 result)
+        self.cols_input.setRange(3, 100);
+        self.cols_input.setValue(4)
 
-        input_layout.addWidget(rows_label)
+        input_layout.addWidget(QLabel("Ecuaciones:"))
         input_layout.addWidget(self.rows_input)
-        input_layout.addWidget(cols_label)
+        input_layout.addWidget(QLabel("Columnas:"))
         input_layout.addWidget(self.cols_input)
         input_layout.addStretch()
-
         section1_layout.addLayout(input_layout)
 
-        # Scrollable matrix area (inside section1)
+        # Matrix Input Area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         section1_layout.addWidget(self.scroll_area)
-
-        # Matrix widget (initially empty)
         self.matrix_widget = QWidget()
         self.scroll_area.setWidget(self.matrix_widget)
 
-        # --- Section 2 (right/top) - mirror of section1 but read-only labels ---
+        # --- SECCION 2: Resultado Matriz ---
         self.section2 = QWidget()
         section2_layout = QVBoxLayout(self.section2)
-        section2_layout.setContentsMargins(0, 0, 0, 0)
-        section2_layout.setSpacing(6)
+        section2_layout.addWidget(QLabel("<b>Matriz Final:</b>"))
 
-        # Title for section2
-        section2_layout.addWidget(QLabel("Matriz Resultante:"))
-
-        # Scrollable matrix area for section2 (no size selectors here)
         self.section2_scroll = QScrollArea()
         self.section2_scroll.setWidgetResizable(True)
-        self.section2_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.section2_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         section2_layout.addWidget(self.section2_scroll)
-
-        # Matrix widget placeholder for section2
         self.section2_matrix_widget = QWidget()
         self.section2_scroll.setWidget(self.section2_matrix_widget)
 
-        # Container to keep label references for quick updates
-        self.section2_labels = []
-
-        # --- Section 3 (bottom) - spans both columns ---
+        # --- SECCION 3: Controles y Procedimiento ---
         self.section3 = QWidget()
         section3_layout = QHBoxLayout(self.section3)
-        section3_layout.setContentsMargins(0, 0, 0, 0)
-        section3_layout.setSpacing(6)
 
-        # Left controls: method selector + Calcular button
-        controls_widget = QWidget()
-        controls_layout = QVBoxLayout(controls_widget)
-        controls_layout.setContentsMargins(0, 0, 0, 0)
-        controls_layout.setSpacing(6)
-
-        controls_layout.addWidget(QLabel("Metodo:"))
-
+        # Controles
+        controls_layout = QVBoxLayout()
         self.method_combo = QComboBox()
         self.method_combo.addItems(["Gauss", "Gauss-Jordan", "Cramer", "Matriz Inversa"])
-        controls_layout.addWidget(self.method_combo)
-
-        self.calc_button = QPushButton("Calcular")
+        self.calc_button = QPushButton("Calcular Solución")
         self.calc_button.clicked.connect(self.on_calculate)
+        self.calc_button.setMinimumHeight(40)
+
+        controls_layout.addWidget(QLabel("Método:"))
+        controls_layout.addWidget(self.method_combo)
         controls_layout.addWidget(self.calc_button)
+        controls_layout.addStretch()
 
-        controls_layout.addStretch()  # push controls to top
-
-        section3_layout.addWidget(controls_widget)
-
-        # Procedure text area (read-only) to the right of controls
+        # Text Area
         self.procedure_area = QTextEdit()
         self.procedure_area.setReadOnly(True)
-        self.procedure_area.setPlaceholderText("El procedimiento aparecerá aquí...")
-        self.procedure_area.setMinimumHeight(120)
-        section3_layout.addWidget(self.procedure_area, stretch=1)
+        self.procedure_area.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
 
-        # Add sections to main grid: top row has two columns, bottom row spans both
+        section3_layout.addLayout(controls_layout, 1)
+        section3_layout.addWidget(self.procedure_area, 4)
+
+        # Layout Principal
         main_grid.addWidget(self.section1, 0, 0)
         main_grid.addWidget(self.section2, 0, 1)
-        main_grid.addWidget(self.section3, 1, 0, 1, 2)  # row 1, col 0, rowspan 1, colspan 2
+        main_grid.addWidget(self.section3, 1, 0, 1, 2)
 
-        # Stretch factors so top row expands more and section2 gets reasonable width
-        main_grid.setColumnStretch(0, 3)
-        main_grid.setColumnStretch(1, 2)
-        main_grid.setRowStretch(0, 9)
-        main_grid.setRowStretch(1, 1)
+        main_grid.setColumnStretch(0, 5)
+        main_grid.setColumnStretch(1, 4)
+        main_grid.setRowStretch(0, 6)
+        main_grid.setRowStretch(1, 4)
 
-        # Initial matrix creation
+        # Inicialización
         self.create_matrix()
+        self.clear_result_matrix()
 
-        # Connect spin boxes to recreate matrix automatically (section2 follows)
         self.rows_input.valueChanged.connect(self.create_matrix)
         self.cols_input.valueChanged.connect(self.create_matrix)
+
+    def get_var_name(self, index):
+        """Genera x, y, z, a, b... consistente con methods.py"""
+        if index < 3: return chr(120 + index)
+        return chr(97 + index - 3)
 
     def create_matrix(self):
         rows = self.rows_input.value()
         cols = self.cols_input.value()
 
-        # Create new matrix widget (inside the scroll area already placed in section1)
         self.matrix_widget = QWidget()
-        matrix_layout = QGridLayout(self.matrix_widget)
-        matrix_layout.setSpacing(2)
-        matrix_layout.setContentsMargins(0, 0, 0, 0)
-        matrix_layout.setVerticalSpacing(0)
+        layout = QGridLayout(self.matrix_widget)
+        layout.setSpacing(5)
 
-        # Variable labels
-        variables = ['x', 'y', 'z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-                     'r', 's', 't', 'u', 'v', 'w']
-
-        # Add variable labels at the top (skip last column as it's the result)
+        # Headers
         for j in range(cols - 1):
-            if j < len(variables):
-                var_label = QLabel(variables[j])
-                var_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                var_label.setStyleSheet("font-weight: bold; padding: 0px; margin: 0px;")
-                var_label.setFixedHeight(18)
-                matrix_layout.addWidget(var_label, 0, j)
+            layout.addWidget(QLabel(self.get_var_name(j), alignment=Qt.AlignmentFlag.AlignCenter), 0, j)
+        layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
-        # Add "Result" label for last column
-        result_label = QLabel("=")
-        result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        result_label.setStyleSheet("font-weight: bold; padding: 0px; margin: 0px;")
-        result_label.setFixedHeight(18)
-        matrix_layout.addWidget(result_label, 0, cols - 1)
-
-        # Create matrix cells (starting from row 1 since row 0 has labels)
         self.cells = []
         for i in range(rows):
             row_cells = []
             for j in range(cols):
-                cell = QLineEdit()
-                cell.setFixedWidth(60)
-                cell.setFixedHeight(26)
-                cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                cell.setText("0")
-                cell.setStyleSheet("padding: 2px; margin: 0px;")
-                matrix_layout.addWidget(cell, i + 1, j)
-                row_cells.append(cell)
+                val = QLineEdit("0")
+                val.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(val, i + 1, j)
+                row_cells.append(val)
             self.cells.append(row_cells)
 
-        # Set the new matrix widget to the scroll area
+        layout.setRowStretch(rows + 1, 1)
         self.scroll_area.setWidget(self.matrix_widget)
+        self.clear_result_matrix()
 
-        # After creating inputs, (re)create section2 labels and wire live updates
-        self.update_section2_matrix()
+    def clear_result_matrix(self):
+        lbl = QLabel("Resultados aquí")
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.section2_scroll.setWidget(lbl)
 
-        # Connect each input to update corresponding label in section2
-        for i in range(len(self.cells)):
-            for j in range(len(self.cells[i])):
-                cell = self.cells[i][j]
-                cell.textChanged.connect(lambda text, i=i, j=j: self.on_cell_text_changed(i, j, text))
+    def display_result_matrix(self, result_matrix):
+        if not result_matrix: return self.clear_result_matrix()
 
-    def on_cell_text_changed(self, i, j, text):
-        if i < len(self.section2_labels) and j < len(self.section2_labels[i]):
-            self.section2_labels[i][j].setText(text)
-
-    def update_section2_matrix(self):
-        rows = self.rows_input.value()
-        cols = self.cols_input.value()
-
-        # Create new widget and layout for section2 matrix
         widget = QWidget()
         layout = QGridLayout(widget)
-        layout.setSpacing(2)
-        layout.setContentsMargins(0, 0, 0, 0)
+        rows = len(result_matrix)
+        cols = len(result_matrix[0])
 
-        # Same variable titles as section1
-        variables = ['x', 'y', 'z', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
-                     'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
-                     'r', 's', 't', 'u', 'v', 'w']
-
-        # Column titles (top row)
+        # Headers
         for j in range(cols - 1):
-            if j < len(variables):
-                var_label = QLabel(variables[j])
-                var_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                var_label.setStyleSheet("font-weight: bold; padding: 0px; margin: 0px;")
-                var_label.setFixedHeight(18)
-                layout.addWidget(var_label, 0, j)
+            lbl = QLabel(self.get_var_name(j))
+            lbl.setStyleSheet("font-weight: bold")
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(lbl, 0, j)
+        layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
-        result_label = QLabel("=")
-        result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        result_label.setStyleSheet("font-weight: bold; padding: 0px; margin: 0px;")
-        result_label.setFixedHeight(18)
-        layout.addWidget(result_label, 0, cols - 1)
-
-        # Cells as read-only labels (mirroring section1 size)
-        self.section2_labels = []
         for i in range(rows):
-            row_labels = []
             for j in range(cols):
-                # If corresponding input exists, use its value; otherwise default "0"
-                text = "0"
-                if hasattr(self, "cells") and i < len(self.cells) and j < len(self.cells[i]):
-                    text = self.cells[i][j].text()
-                lbl = QLabel(text)
+                val = result_matrix[i][j]
+                txt = f"{int(val)}" if abs(val - round(val)) < 1e-9 else f"{val:.4f}"
+                lbl = QLabel(txt)
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                lbl.setFixedWidth(60)
-                lbl.setFixedHeight(26)
-                # give a framed look similar to input fields
                 lbl.setFrameShape(QFrame.Shape.Box)
-                lbl.setLineWidth(1)
-                lbl.setStyleSheet("padding: 2px; margin: 0px;")
+
+                # Resaltar resultado
+                color = "#d4f0f0" if j == cols - 1 else "white"
+                lbl.setStyleSheet(f"background-color: {color}; border: 1px solid #aaa;")
                 layout.addWidget(lbl, i + 1, j)
-                row_labels.append(lbl)
-            self.section2_labels.append(row_labels)
 
-        # Set constructed widget into the scroll area
-        self.section2_matrix_widget = widget
-        self.section2_scroll.setWidget(self.section2_matrix_widget)
-
-    # Methods to control the procedure text area from within the app
-    def set_procedure(self, text: str):
-        """Replace procedure content."""
-        self.procedure_area.setPlainText(text)
-
-    def append_procedure(self, text: str):
-        """Append text to the procedure area."""
-        self.procedure_area.moveCursor(self.procedure_area.textCursor().End)
-        self.procedure_area.insertPlainText(text)
-        # keep scrollbar at bottom
-        self.procedure_area.verticalScrollBar().setValue(self.procedure_area.verticalScrollBar().maximum())
+        layout.setRowStretch(rows + 1, 1)
+        self.section2_scroll.setWidget(widget)
 
     def get_matrix_values(self):
-        """Obtiene los valores actuales de la matriz como lista de listas de floats."""
-        matrix = []
+        mat = []
         try:
-            for i in range(len(self.cells)):
+            for r in self.cells:
                 row = []
-                for j in range(len(self.cells[i])):
-                    value = self.cells[i][j].text().strip()
-                    if not value:
-                        value = "0"
-                    row.append(float(value))
-                matrix.append(row)
-            return matrix
-        except ValueError as e:
-            QMessageBox.warning(self, "Error de entrada",
-                                "Por favor, ingrese solo números válidos en la matriz.")
+                for c in r:
+                    txt = c.text().strip() or "0"
+                    row.append(float(txt))
+                mat.append(row)
+            return mat
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Solo números permitidos")
             return None
 
     def on_calculate(self):
-        """Triggered by the Calcular button."""
-        method = self.method_combo.currentText()
+        mat = self.get_matrix_values()
+        if not mat: return
 
-        # Limpiar procedimiento anterior
-        self.set_procedure("")
+        self.procedure_area.setText("Calculando...")
+        self.clear_result_matrix()
 
-        # Obtener valores de la matriz
-        matrix = self.get_matrix_values()
-        if matrix is None:
-            return
-
-        # Resolver el sistema
         try:
-            solution, procedure = solve_system(matrix, method)
-
-            # Mostrar procedimiento
-            self.set_procedure(procedure)
-
-            # Si hay solución, actualizar la matriz resultante (opcional)
-            if solution:
-                # Aquí podrías mostrar la solución en la matriz resultante si lo deseas
-                pass
-
+            sol, proc, final_mat = solve_system(mat, self.method_combo.currentText())
+            self.procedure_area.setText(proc)
+            if final_mat: self.display_result_matrix(final_mat)
         except Exception as e:
-            error_msg = f"Error al resolver el sistema:\n{str(e)}"
-            self.set_procedure(error_msg)
-            QMessageBox.critical(self, "Error", error_msg)
+            self.procedure_area.setText(f"Error: {e}")

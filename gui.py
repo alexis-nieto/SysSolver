@@ -3,14 +3,15 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout,
                              QScrollArea, QGridLayout, QSpinBox, QTextEdit,
                              QFrame, QComboBox, QMessageBox)
 from PyQt6.QtCore import Qt
-from methods import solve_system
+from fractions import Fraction
+from methods import solve_system, format_number
 
 
 class GUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Solucionador de Sistemas de Ecuaciones")
-        self.setGeometry(100, 100, 950, 550)
+        self.setWindowTitle("Solucionador (Modo Fracciones/Precisión)")
+        self.setGeometry(100, 100, 1000, 600)
 
         # --- Main widget ---
         main_widget = QWidget()
@@ -23,7 +24,6 @@ class GUI(QMainWindow):
         self.section1 = QWidget()
         section1_layout = QVBoxLayout(self.section1)
 
-        # Inputs
         input_layout = QHBoxLayout()
         self.rows_input = QSpinBox()
         self.rows_input.setRange(2, 100);
@@ -39,7 +39,6 @@ class GUI(QMainWindow):
         input_layout.addStretch()
         section1_layout.addLayout(input_layout)
 
-        # Area Matriz Input
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         section1_layout.addWidget(self.scroll_area)
@@ -49,7 +48,7 @@ class GUI(QMainWindow):
         # --- SECCION 2: Resultados ---
         self.section2 = QWidget()
         section2_layout = QVBoxLayout(self.section2)
-        section2_layout.addWidget(QLabel("<b>Matriz Final:</b>"))
+        section2_layout.addWidget(QLabel("<b>Matriz Final (Fracciones):</b>"))
 
         self.section2_scroll = QScrollArea()
         self.section2_scroll.setWidgetResizable(True)
@@ -75,12 +74,11 @@ class GUI(QMainWindow):
 
         self.procedure_area = QTextEdit()
         self.procedure_area.setReadOnly(True)
-        self.procedure_area.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
+        self.procedure_area.setStyleSheet("font-family: Consolas, monospace; font-size: 13px;")
 
         section3_layout.addLayout(controls_layout, 1)
         section3_layout.addWidget(self.procedure_area, 4)
 
-        # Grid layout
         main_grid.addWidget(self.section1, 0, 0)
         main_grid.addWidget(self.section2, 0, 1)
         main_grid.addWidget(self.section3, 1, 0, 1, 2)
@@ -90,19 +88,14 @@ class GUI(QMainWindow):
         main_grid.setRowStretch(0, 6)
         main_grid.setRowStretch(1, 4)
 
-        # Init
         self.create_matrix()
         self.clear_result_matrix()
 
         self.rows_input.valueChanged.connect(self.create_matrix)
         self.cols_input.valueChanged.connect(self.create_matrix)
 
-    # --- CAMBIO PRINCIPAL EN GUI AQUÍ ---
     def get_var_name(self, index):
-        """Devuelve x1, x2, x3..."""
         return f"x{index + 1}"
-
-    # ------------------------------------
 
     def create_matrix(self):
         rows = self.rows_input.value()
@@ -112,9 +105,7 @@ class GUI(QMainWindow):
         layout = QGridLayout(self.matrix_widget)
         layout.setSpacing(5)
 
-        # Headers
         for j in range(cols - 1):
-            # Usamos get_var_name para el header
             layout.addWidget(QLabel(self.get_var_name(j), alignment=Qt.AlignmentFlag.AlignCenter), 0, j)
         layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
@@ -133,7 +124,7 @@ class GUI(QMainWindow):
         self.clear_result_matrix()
 
     def clear_result_matrix(self):
-        lbl = QLabel("Resultados aquí")
+        lbl = QLabel("Resultados")
         lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.section2_scroll.setWidget(lbl)
 
@@ -145,7 +136,6 @@ class GUI(QMainWindow):
         rows = len(result_matrix)
         cols = len(result_matrix[0])
 
-        # Headers Resultado (Consistente con Input)
         for j in range(cols - 1):
             lbl = QLabel(self.get_var_name(j))
             lbl.setStyleSheet("font-weight: bold")
@@ -156,10 +146,17 @@ class GUI(QMainWindow):
         for i in range(rows):
             for j in range(cols):
                 val = result_matrix[i][j]
-                txt = f"{int(val)}" if abs(val - round(val)) < 1e-9 else f"{val:.4f}"
+
+                # USAMOS LA NUEVA FUNCIÓN DE FORMATO
+                txt = format_number(val)
+
                 lbl = QLabel(txt)
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 lbl.setFrameShape(QFrame.Shape.Box)
+
+                # Ajustar ancho dinámicamente según longitud del texto (para fracciones largas)
+                width = max(60, len(txt) * 9)
+                lbl.setMinimumWidth(width)
 
                 color = "#d4f0f0" if j == cols - 1 else "white"
                 lbl.setStyleSheet(f"background-color: {color}; border: 1px solid #aaa;")
@@ -175,11 +172,18 @@ class GUI(QMainWindow):
                 row = []
                 for c in r:
                     txt = c.text().strip() or "0"
-                    row.append(float(txt))
+                    # AQUÍ ES LA CLAVE: Convertir input a Fraction directamente
+                    # Esto permite al usuario escribir "1/2" o "0.5"
+                    try:
+                        val = Fraction(txt)
+                    except ValueError:
+                        # Si falla Fraction (raro), intenta float
+                        val = Fraction(float(txt))
+                    row.append(val)
                 mat.append(row)
             return mat
         except ValueError:
-            QMessageBox.warning(self, "Error", "Solo números permitidos")
+            QMessageBox.warning(self, "Error", "Ingrese números válidos (ej: 5, 1.2, 3/4)")
             return None
 
     def on_calculate(self):

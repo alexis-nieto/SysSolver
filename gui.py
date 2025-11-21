@@ -95,7 +95,7 @@ class GUI(QMainWindow):
         self.cols_input.valueChanged.connect(self.create_matrix)
 
     def get_var_name(self, index):
-        return f"x{index + 1}"
+        return f"X{index + 1}"
 
     def create_matrix(self):
         rows = self.rows_input.value()
@@ -107,7 +107,7 @@ class GUI(QMainWindow):
 
         for j in range(cols - 1):
             layout.addWidget(QLabel(self.get_var_name(j), alignment=Qt.AlignmentFlag.AlignCenter), 0, j)
-        layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
+        layout.addWidget(QLabel("R", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
         self.cells = []
         for i in range(rows):
@@ -141,7 +141,7 @@ class GUI(QMainWindow):
             lbl.setStyleSheet("font-weight: bold")
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(lbl, 0, j)
-        layout.addWidget(QLabel("=", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
+        layout.addWidget(QLabel("R", alignment=Qt.AlignmentFlag.AlignCenter), 0, cols - 1)
 
         for i in range(rows):
             for j in range(cols):

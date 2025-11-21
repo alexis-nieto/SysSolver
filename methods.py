@@ -256,7 +256,7 @@ class SystemSolver:
         solution_float = np.dot(A_inv_float, np.array(b, dtype=float))
         solution = [Fraction(x).limit_denominator(100000) for x in solution_float]
 
-        procedure += "Solución x = A⁻¹ * b:\n"
+        procedure += "Solución x = A⁻¹ * R:\n"
         procedure += self._get_solution_text(solution)
 
         final_matrix = self._create_identity_result_matrix(solution)

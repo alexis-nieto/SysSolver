@@ -5,30 +5,30 @@ from typing import List, Tuple, Any
 
 def format_number(value: Any) -> str:
     """
-    Formatea el número:
-    - Si es Fraction y denominador 1 -> Entero
-    - Si es Fraction -> Numerador/Denominador
-    - Si es float -> Intenta convertir a fracción, sino 8 cifras significativas.
+    le damos formato al numero:
+    - si es fraccion con denominador 1 -> lo ponemos como entero
+    - si es fraccion normal -> numerador/denominador
+    - si es decimal -> intentamos hacerlo fraccion, si no se puede mostramos 8 numeros
     """
     try:
         if isinstance(value, (int, np.integer)):
             return str(value)
 
-        # Si ya es fracción
+        # si ya es una fraccion
         if isinstance(value, Fraction):
             if value.denominator == 1:
                 return str(value.numerator)
             return f"{value.numerator}/{value.denominator}"
 
-        # Si es float, intentamos convertir a fracción exacta si es "bonita"
-        # o usamos notación científica/decimal compacta si es compleja.
+        # si es decimal, tratamos de ver si es una fraccion exacta
+        # o usamos notacion cientifica si es muy complicado
         val_float = float(value)
 
-        # Verificar si es entero disfrazado de float (ej: 4.0)
+        # checamos si es un entero que parece decimal (ej: 4.0)
         if val_float.is_integer():
             return str(int(val_float))
 
-        # Intento de recuperar fracción de un float (útil para Cramer/Inversa que devuelven floats)
+        # intento recuperar la fraccion de un decimal (sirve para cramer/inversa que dan decimales)
         try:
             frac = Fraction(val_float).limit_denominator(1000000)
             if abs(float(frac) - val_float) < 1e-9:
@@ -37,7 +37,7 @@ def format_number(value: Any) -> str:
         except:
             pass
 
-        # Fallback: 8 cifras significativas
+        # si todo falla, mostramos 8 numeros
         return f"{val_float:.8g}"
 
     except Exception:
@@ -45,11 +45,11 @@ def format_number(value: Any) -> str:
 
 
 class SystemSolver:
-    """Clase para resolver sistemas usando Fracciones exactas."""
+    """clase para resolver los sistemas con fracciones exactas"""
 
     def __init__(self, matrix: List[List[Any]]):
-        # Convertimos todo a Fraction al inicio
-        # Usamos dtype=object para que numpy no convierta a float automáticamente
+        # convertimos todo a fraccion desde el principio
+        # usamos objetos para que numpy no lo cambie a decimales
         self.original_matrix = np.array([
             [Fraction(x) for x in row] for row in matrix
         ], dtype=object)
@@ -69,7 +69,7 @@ class SystemSolver:
 
     def _create_identity_result_matrix(self, solution: List[Any]) -> List[List[Any]]:
         if not solution: return []
-        # Matriz identidad de objetos (Fraction(0) y Fraction(1))
+        # matriz identidad de objetos (Fraction(0) y Fraction(1))
         final_mat = np.eye(self.n_equations, dtype=object)
         for r in range(self.n_equations):
             for c in range(self.n_equations):
@@ -83,7 +83,7 @@ class SystemSolver:
 
     def _matrix_to_string(self, matrix) -> str:
         result = ""
-        # Calculamos ancho máximo para alinear bonito
+        # calculamos el ancho maximo para que se vea alineado
         rows_str = []
         for row in matrix:
             rows_str.append([format_number(val) for val in row])
@@ -106,7 +106,7 @@ class SystemSolver:
 
         for k in range(self.n_equations - 1):
             max_row = k
-            # Buscamos pivote (en valor absoluto)
+            # buscamos el pivote (valor absoluto)
             for i in range(k + 1, self.n_equations):
                 if abs(matrix[i][k]) > abs(matrix[max_row][k]):
                     max_row = i
@@ -177,15 +177,15 @@ class SystemSolver:
             return [], "Error: Requiere sistema cuadrado.\n", []
 
         procedure = "=== REGLA DE CRAMER ===\n\n"
-        # Convertimos a float64 para calcular determinante si numpy se queja con objetos,
-        # pero intentamos mantenerlo limpio.
-        # Nota: Calcular det de Fractions con numpy es inestable, lo convertiremos a float para el cálculo
-        # y luego convertiremos el resultado a fracción.
+        # convertimos a decimales para sacar el determinante si numpy se queja,
+        # pero tratamos de mantenerlo limpio.
+        # nota: sacar determinante de fracciones con numpy falla a veces, asi que lo pasamos a decimal
+        # y luego regresamos a fraccion.
 
         A_obj = self.original_matrix[:, :-1]
         b_obj = self.original_matrix[:, -1]
 
-        # Función auxiliar para determinante exacto (lento pero preciso) o fallback a float
+        # funcion para sacar el determinante exacto (lento pero seguro) o si no con decimales
         def get_det(mat):
             try:
                 # Convertir a float para usar numpy det
@@ -232,8 +232,8 @@ class SystemSolver:
         A = self.original_matrix[:, :-1]
         b = self.original_matrix[:, -1]
 
-        # Numpy inv no funciona bien con dtype=object (Fractions).
-        # Convertimos a float, calculamos y reconvertimos a fracción.
+        # la inversa de numpy no jala bien con objetos (fracciones).
+        # pasamos a decimal, calculamos y regresamos a fraccion.
         try:
             A_float = np.array(A, dtype=float)
             A_inv_float = np.linalg.inv(A_float)
@@ -246,7 +246,7 @@ class SystemSolver:
             row_frac = []
             for c in range(self.n_equations):
                 val = A_inv_float[r][c]
-                # Heurística para encontrar la fracción
+                # truco para encontrar la fraccion
                 f = Fraction(val).limit_denominator(100000)
                 row_frac.append(f)
             A_inv_frac.append(row_frac)
@@ -256,7 +256,7 @@ class SystemSolver:
         solution_float = np.dot(A_inv_float, np.array(b, dtype=float))
         solution = [Fraction(x).limit_denominator(100000) for x in solution_float]
 
-        procedure += "Solución x = A⁻¹ * b:\n"
+        procedure += "Solución x = A⁻¹ * R:\n"
         procedure += self._get_solution_text(solution)
 
         final_matrix = self._create_identity_result_matrix(solution)

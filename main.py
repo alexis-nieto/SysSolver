@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication
-from gui import GUI  # import the UI class
+from gui import GUI  # importamos la clase de la interfaz
 
 def initialize_gui():
     app = QApplication(sys.argv)
